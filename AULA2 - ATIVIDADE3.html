@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Aula 2 - Fábrica de Processamento</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f0fa; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .header { background-color: #8e44ad; color: white; width: 100%; max-width: 850px; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 10px; }
+        .word-bank { background: #fff; width: 100%; max-width: 850px; padding: 15px; border: 2px dashed #8e44ad; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .word-bank span { display: inline-block; background: #eee; padding: 5px 12px; margin: 4px; border-radius: 20px; font-size: 14px; color: #444; border: 1px solid #ccc; font-weight: 500; }
+        .container { background: white; width: 100%; max-width: 850px; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .exemplo { border-bottom: 2px solid #f9f9f9; padding: 15px 0; display: grid; grid-template-columns: 120px 1fr; gap: 20px; align-items: center; }
+        .icon { font-size: 40px; text-align: center; line-height: 1.2; }
+        .icon small { font-size: 12px; font-weight: bold; color: #8e44ad; display: block; }
+        .inputs-grid { display: flex; gap: 10px; justify-content: space-between; }
+        .input-group { display: flex; flex-direction: column; flex: 1; }
+        label { font-size: 11px; font-weight: bold; color: #999; margin-bottom: 2px; text-transform: uppercase; }
+        input { padding: 10px; border: 2px solid #eee; border-radius: 6px; width: 90%; transition: 0.3s; font-size: 14px; }
+        input:focus { border-color: #8e44ad; outline: none; background-color: #fdfaff; }
+        input.correct { border-color: #2ecc71; background-color: #e8f8f1; color: #27ae60; font-weight: bold; }
+        button { background-color: #8e44ad; color: white; border: none; padding: 15px 40px; border-radius: 8px; cursor: pointer; font-size: 18px; margin-top: 30px; font-weight: bold; box-shadow: 0 4px #6c3483; }
+        button:active { box-shadow: 0 0; transform: translateY(4px); }
+        #resultado { margin-top: 20px; font-size: 22px; font-weight: bold; text-align: center; display: none; padding: 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>AULA 2: O CICLO DA INFORMAÇÃO</h1>
+    <p>Consulte o banco de dados e organize as entradas, processamentos e saídas!</p>
+</div>
+
+<div class="word-bank">
+    <strong>Banco de Dados (Sugestões Embaralhadas):</strong><br>
+    <div id="lista-palavras"></div>
+</div>
+
+<div class="container">
+    <div id="questoes"></div>
+    <center><button onclick="verificar()">FINALIZAR E PONTUAR</button></center>
+    <div id="resultado"></div>
+</div>
+
+<script>
+    const desafios = [
+        { icon: "🥤", item: "Suco", e: "laranja", p: "espremer", s: "suco" },
+        { icon: "➕", item: "Calculadora", e: "números", p: "somar", s: "resultado" },
+        { icon: "🍞", item: "Torradeira", e: "pão", p: "aquecer", s: "torrada" },
+        { icon: "📸", item: "Câmera", e: "luz", p: "capturar", s: "foto" },
+        { icon: "👕", item: "Maq. Lavar", e: "roupa suja", p: "lavar", s: "roupa limpa" },
+        { icon: "🍦", item: "Sorveteira", e: "leite e fruta", p: "congelar", s: "sorvete" },
+        { icon: "📝", item: "Impressora", e: "arquivo", p: "imprimir", s: "papel impresso" },
+        { icon: "🚗", item: "Carro", e: "combustível", p: "queimar", s: "movimento" },
+        { icon: "🍳", item: "Fritadeira", e: "batata crua", p: "fritar", s: "batata frita" },
+        { icon: "🎮", item: "Videogame", e: "comando do controle", p: "processar", s: "ação na tela" }
+    ];
+
+    // Criar lista de palavras e embaralhar
+    let todasPalavras = [];
+    desafios.forEach(d => {
+        todasPalavras.push(d.e, d.p, d.s);
+    });
+    todasPalavras.sort(() => Math.random() - 0.5); 
+
+    // Exibir palavras no banco
+    const listaPalavrasDiv = document.getElementById('lista-palavras');
+    todasPalavras.forEach(p => {
+        listaPalavrasDiv.innerHTML += `<span>${p}</span>`;
+    });
+
+    // Criar as questões na tela
+    const container = document.getElementById('questoes');
+    desafios.forEach((d, index) => {
+        container.innerHTML += `
+            <div class="exemplo">
+                <div class="icon">${d.icon}<small>${d.item}</small></div>
+                <div class="inputs-grid">
+                    <div class="input-group"><label>Entrada</label><input type="text" id="e${index}" placeholder="..." autocomplete="off"></div>
+                    <div class="input-group"><label>Processamento</label><input type="text" id="p${index}" placeholder="..." autocomplete="off"></div>
+                    <div class="input-group"><label>Saída</label><input type="text" id="s${index}" placeholder="..." autocomplete="off"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    function verificar() {
+        let acertos = 0;
+        let totalCampos = desafios.length * 3;
+        
+        desafios.forEach((d, index) => {
+            const ie = document.getElementById(`e${index}`);
+            const ip = document.getElementById(`p${index}`);
+            const is = document.getElementById(`s${index}`);
+
+            const check = (el, correctVal) => {
+                // Remove espaços extras e ignora maiúsculas/minúsculas
+                if(el.value.toLowerCase().trim() === correctVal.toLowerCase()) {
+                    el.classList.add('correct');
+                    return 1;
+                } else {
+                    el.classList.remove('correct');
+                    return 0;
+                }
+            };
+
+            acertos += check(ie, d.e);
+            acertos += check(ip, d.p);
+            acertos += check(is, d.s);
+        });
+
+        // CÁLCULO DA NOTA DE 0 A 10
+        let nota = (acertos * 10) / totalCampos;
+        let notaFinal = nota.toFixed(1); 
+
+        const resDiv = document.getElementById('resultado');
+        resDiv.style.display = "block";
+        
+        let mensagem = "";
+        let corBorda = "";
+
+        if(nota === 10) {
+            mensagem = `⭐ NOTA: ${notaFinal} ⭐<br>Perfeito! Você dominou o ciclo de processamento!`;
+            corBorda = "#2ecc71";
+        } else if (nota >= 7) {
+            mensagem = `✅ NOTA: ${notaFinal}<br>Muito bom! Você acertou ${acertos} de ${totalCampos} campos.`;
+            corBorda = "#3498db";
+        } else if (nota >= 5) {
+            mensagem = `🟡 NOTA: ${notaFinal}<br>Bom esforço, mas você ainda pode melhorar!`;
+            corBorda = "#f1c40f";
+        } else {
+            mensagem = `❌ NOTA: ${notaFinal}<br>Ops! Olhe o banco de palavras e tente novamente.`;
+            corBorda = "#e67e22";
+        }
+
+        resDiv.innerHTML = mensagem;
+        resDiv.style.border = `3px solid ${corBorda}`;
+        resDiv.style.backgroundColor = "#fff";
+        resDiv.style.color = corBorda;
+    }
+</script>
+
+</body>
+</html>
